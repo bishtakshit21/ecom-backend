@@ -7,6 +7,10 @@ import com.project.ecom.model.Category;
 import com.project.ecom.model.Product;
 import com.project.ecom.repository.CategoryRepo;
 import com.project.ecom.repository.ProductRepo;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,6 +28,11 @@ public class ProductServiceImpl implements ProductService{
     }
 
     @Override
+    @Caching(
+            evict = {@CacheEvict(value = "product",key = "'all'"),
+                     @CacheEvict(value = "products",key="#result.category_id")},
+            put = {@CachePut(value = "product",key ="#result.id" )}
+    )
     public ProductResponseDto createproduct(ProductRequestDto productRequestDto) {
         Category category=categoryRepo.findById(productRequestDto.getCategoryId()).
                 orElseThrow(()-> new ResourceNotFoundException("the category does not exist by id - "+productRequestDto.getCategoryId()));
@@ -40,6 +49,7 @@ public class ProductServiceImpl implements ProductService{
     }
 
     @Override
+    @Cacheable(value = "product",key = "'all'")
     public List<ProductResponseDto> GetallProduct() {
         return productRepo.findAll().stream()
                 .map(this::mapToResponse)
@@ -47,6 +57,7 @@ public class ProductServiceImpl implements ProductService{
     }
 
     @Override
+    @Cacheable(value = "product",key = "#id")
     public ProductResponseDto GetProductByid(Long id) {
         Product product=productRepo.findById(id).
                 orElseThrow(()-> new ResourceNotFoundException("the product does not exist with id - " + id ));
@@ -54,6 +65,7 @@ public class ProductServiceImpl implements ProductService{
     }
 
     @Override
+    @Cacheable(value = "products",key = "#categoryId")
     public List<ProductResponseDto> getProductByCategory(Long categoryId) {
         return productRepo.findByCategory_id(categoryId).stream()
                 .map(this::mapToResponse)
@@ -61,6 +73,11 @@ public class ProductServiceImpl implements ProductService{
     }
 
     @Override
+
+    @Caching(
+            evict = {@CacheEvict(value = "product",allEntries = true),
+                     @CacheEvict(value = "products",allEntries = true)}
+    )
     public void deleteProduct(Long id) {
         if(!productRepo.existsById(id)){
             throw new ResourceNotFoundException("the [roduct does not exist");

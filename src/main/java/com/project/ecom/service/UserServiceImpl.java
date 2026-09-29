@@ -6,6 +6,10 @@ import com.project.ecom.dto.UserResponseDto;
 import com.project.ecom.enums.Role;
 import com.project.ecom.model.User;
 import com.project.ecom.repository.UserRepo;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +26,9 @@ public class UserServiceImpl implements UserService {
         this.passwordEncoder=passwordEncoder;
     }
     @Override
+    @Caching(put ={ @CachePut(value = "users", key = "#result.id")},
+             evict={ @CacheEvict(value = "users", key = "'all'")})
+
     public UserResponseDto CreateUser(UserRequestDto userRequestDto) {
        User user =new User();
        user.setName(userRequestDto.getName());
@@ -34,12 +41,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Cacheable(value = "users", key = "#id")
     public UserResponseDto GetById(Long id) {
         User user =userRepo.findById(id).orElseThrow(()-> new ResourceNotFoundException("the record with is not present woth the id : "+id));
         return maptorepsonse(user);
     }
 
     @Override
+    @Cacheable(value = "users", key = "'all'")
     public List<UserResponseDto> GetAll() {
         return userRepo.findAll().stream()
                                  .map(this::maptorepsonse)
@@ -47,6 +56,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @CacheEvict(value = "users", allEntries = true)
     public void DeleteById(Long id) {
         if(!userRepo.existsById(id)){
             throw new ResourceNotFoundException("the use with this id is not present : " + id);
@@ -55,6 +65,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Cacheable(value = "users", key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getName()")
     public UserResponseDto findMe() {
         String email= SecurityContextHolder.getContext().getAuthentication().getName();
         return maptorepsonse(userRepo.findByEmail(email).orElseThrow(()-> new UsernameNotFoundException("the user does not exist")));

@@ -17,33 +17,33 @@ import java.util.List;
 @RequestMapping("/api/product")
 
 public class productController {
-    private ProductServiceImpl productServiceimpl;
-    public productController (ProductServiceImpl productServiceimpl){
-        this.productServiceimpl=productServiceimpl;
+    private ProductService productService;
+    public productController (ProductService productService){
+        this.productService=productService;
     }
 @GetMapping("/fetchall")
 public ResponseEntity <List<ProductResponseDto>> FetchAll(){
-    return ResponseEntity.ok(productServiceimpl.GetallProduct());
+    return ResponseEntity.ok(productService.GetallProduct());
 }
 @GetMapping("/fetch/{id}")
     public ResponseEntity<ProductResponseDto> GetById(@PathVariable Long id){
-        return ResponseEntity.ok(productServiceimpl.GetProductByid(id));
+        return ResponseEntity.ok(productService.GetProductByid(id));
 }
     @GetMapping("/fetchbycategory/{category_id}")
     public ResponseEntity<List<ProductResponseDto>> GetBycategoryId(@PathVariable Long category_id){
-        return ResponseEntity.ok(productServiceimpl.getProductByCategory(category_id));
+        return ResponseEntity.ok(productService.getProductByCategory(category_id));
     }
 
     @PreAuthorize("hasAnyRole('ADMIN')")
     @PostMapping("/Create")
     public ResponseEntity<ProductResponseDto> createProduct(@RequestBody ProductRequestDto productRequestDto){
-        return new ResponseEntity<>(productServiceimpl.createproduct(productRequestDto), HttpStatus.CREATED);
+        return new ResponseEntity<>(productService.createproduct(productRequestDto), HttpStatus.CREATED);
 }
 
     @PreAuthorize("hasAnyRole('ADMIN')")
     @DeleteMapping("/Delete/{id}")
     public ResponseEntity<String> Delete (@PathVariable Long id){
-    productServiceimpl.deleteProduct(id);
+    productService.deleteProduct(id);
     return ResponseEntity.ok("sucessfully deleted");
         }
 

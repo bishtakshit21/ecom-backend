@@ -10,6 +10,10 @@ import com.project.ecom.repository.OrderRepo;
 import com.project.ecom.repository.ProductRepo;
 import com.project.ecom.repository.UserRepo;
 import jakarta.transaction.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -30,6 +34,8 @@ public class OrderServiceImpl implements OrderService{
     }
     @Override
 @Transactional
+    @Caching(put={@CachePut(value = "order", key = "#result.orderId")},
+            evict = {@CacheEvict(value = "order",key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getName()")})
     public OrderResponseDto createOrder(OrderRequestDto orderRequestDto) {
         String email= SecurityContextHolder.getContext().getAuthentication().getName();//here we got the user from the current security context means we do not need to provide the user the currently logged-in user gets automatically picked up
         User user =userRepo.findByEmail(email)
@@ -62,12 +68,14 @@ public class OrderServiceImpl implements OrderService{
     }
 
     @Override
+    @Cacheable(value = "order",key = "#id")
     public OrderResponseDto GetOrderById(Long id) {
         Order order=orderRepo.findById(id).orElseThrow(()-> new ResourceNotFoundException("the order does not exist with the id : "+id));
         return mapToResponseDto(order);
     }
 
     @Override
+    @Cacheable(value = "order",key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getName()")
     public List<OrderResponseDto> GetOrderByUser() {
         String email= SecurityContextHolder.getContext().getAuthentication().getName();
         return orderRepo.findByUserEmail(email).stream()
